@@ -13,8 +13,10 @@ from upscaler import load_image, save_image
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = "uploads"
-OUTPUT_FOLDER = "outputs"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.environ.get("UPSCALED_DATA_DIR") or BASE_DIR
+UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
+OUTPUT_FOLDER = os.path.join(DATA_DIR, "outputs")
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 
@@ -39,7 +41,8 @@ def load_model():
     try:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = Generator(scale_factor=4).to(device)
-        model.load_state_dict(torch.load("generator.pth", map_location=device))
+        model_path = os.path.join(BASE_DIR, "generator.pth")
+        model.load_state_dict(torch.load(model_path, map_location=device))
         model.eval()
         model_loaded = True
         print(f"Model loaded successfully on {device}!")
@@ -88,9 +91,25 @@ HTML_TEMPLATE = """
             box-sizing: border-box;
         }
 
+        :root {
+            --brand-navy: #0b1536;
+            --brand-cyan: #0ea5e9;
+            --brand-blue: #3b82f6;
+            --brand-purple: #8b5cf6;
+            --brand-pink: #ec4899;
+            --brand-orange: #fb923c;
+            --brand-bg: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 45%, #ec4899 75%, #fb923c 100%);
+            --brand-accent: linear-gradient(90deg, #0ea5e9, #8b5cf6, #ec4899, #fb923c);
+            --brand-accent-strong: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899, #fb923c);
+            --text-muted: #64748b;
+            --surface: rgba(255, 255, 255, 0.95);
+            --surface-2: #f8fafc;
+            --border: #d1d5db;
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--brand-bg);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -99,7 +118,7 @@ HTML_TEMPLATE = """
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--surface);
             backdrop-filter: blur(20px);
             border-radius: 24px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
@@ -117,7 +136,7 @@ HTML_TEMPLATE = """
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            background: var(--brand-accent);
             border-radius: 24px 24px 0 0;
         }
 
@@ -125,40 +144,38 @@ HTML_TEMPLATE = """
             text-align: center;
             font-size: 2.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--brand-navy);
             margin-bottom: 12px;
         }
 
         .subtitle {
             text-align: center;
-            color: #6b7280;
+            color: var(--text-muted);
             font-size: 1.1rem;
             margin-bottom: 40px;
         }
 
         .upload-area {
-            border: 2px dashed #d1d5db;
+            border: 2px dashed var(--border);
             border-radius: 16px;
             padding: 60px 20px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            background: #f9fafb;
+            background: var(--surface-2);
             position: relative;
             overflow: hidden;
         }
 
         .upload-area:hover {
-            border-color: #667eea;
-            background: #f0f4ff;
+            border-color: var(--brand-purple);
+            background: rgba(14, 165, 233, 0.06);
             transform: translateY(-2px);
         }
 
         .upload-area.dragover {
-            border-color: #667eea;
-            background: #f0f4ff;
+            border-color: var(--brand-purple);
+            background: rgba(139, 92, 246, 0.08);
             transform: scale(1.02);
         }
 
@@ -166,7 +183,7 @@ HTML_TEMPLATE = """
             width: 64px;
             height: 64px;
             margin: 0 auto 16px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--brand-accent-strong);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -178,12 +195,12 @@ HTML_TEMPLATE = """
         .upload-text {
             font-size: 1.2rem;
             font-weight: 600;
-            color: #374151;
+            color: #0f172a;
             margin-bottom: 8px;
         }
 
         .upload-subtext {
-            color: #6b7280;
+            color: var(--text-muted);
             font-size: 0.9rem;
         }
 
@@ -207,7 +224,7 @@ HTML_TEMPLATE = """
 
         .file-info {
             margin-top: 12px;
-            color: #6b7280;
+            color: var(--text-muted);
             font-size: 0.9rem;
         }
 
@@ -236,13 +253,13 @@ HTML_TEMPLATE = """
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--brand-accent-strong);
             color: white;
         }
 
         .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 28px rgba(139, 92, 246, 0.32);
         }
 
         .btn-secondary {
@@ -302,7 +319,7 @@ HTML_TEMPLATE = """
             width: 24px;
             height: 24px;
             border: 3px solid #f3f4f6;
-            border-top: 3px solid #667eea;
+            border-top: 3px solid var(--brand-purple);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -323,7 +340,7 @@ HTML_TEMPLATE = """
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            background: var(--brand-accent);
             width: 0%;
             transition: width 0.3s ease;
         }
@@ -673,4 +690,7 @@ def cleanup(task_id):
 if __name__ == "__main__":
     load_model()
 
-    app.run(debug = True, host = "0.0.0.0", port = 5000)
+    host = os.environ.get("UPSCALED_HOST", "127.0.0.1")
+    port = int(os.environ.get("UPSCALED_PORT", "5000"))
+    debug = os.environ.get("FLASK_DEBUG", "").strip() in {"1", "true", "True", "yes", "on"}
+    app.run(debug=debug, host=host, port=port)

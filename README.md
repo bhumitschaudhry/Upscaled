@@ -1,3 +1,5 @@
+![Upscaled](src/assets/upscaled-text.png)
+
 # AI Image Upscaler
 
 An advanced image upscaling application that uses AI to enhance image resolution while maintaining quality. Built with Python, Flask, and PyTorch.
@@ -16,6 +18,7 @@ An advanced image upscaling application that uses AI to enhance image resolution
 - PyTorch
 - Flask
 - Other dependencies (listed in requirements.txt)
+- Node.js 18+ (for Electron desktop app)
 
 ## Installation
 
@@ -38,6 +41,8 @@ pip install -r requirements.txt
 
 ## Usage
 
+### Web (Flask)
+
 1. Start the Flask server:
 
 ```bash
@@ -45,12 +50,52 @@ python app.py
 ```
 
 2. Open your web browser and navigate to `http://localhost:5000`
-
 3. Upload an image through the web interface
-
 4. Wait for the processing to complete
-
 5. Download your upscaled image
+
+### Desktop (Electron)
+
+1. Install Node dependencies:
+
+```bash
+npm install
+```
+
+2. Ensure Python dependencies are installed:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Start the desktop app:
+
+```bash
+npm start
+```
+
+This launches Electron, which starts the Flask backend automatically and loads it inside a desktop window.
+
+## Build (Desktop)
+
+Packaging is OS-specific. Run the build on the target OS you want to ship for (macOS/Linux/Windows).
+
+- Directory build:
+
+```bash
+npm run pack
+```
+
+- Installer build:
+
+```bash
+npm run dist
+```
+
+## Notes
+
+- The packaged desktop app currently uses the system Python runtime on the machine.
+  - If Python is not on PATH, set `UPSCALED_PYTHON` to your python executable path and relaunch.
 
 ## Configuration
 

@@ -9,6 +9,7 @@ const SERVER_URL = `http://${SERVER_HOST}:${SERVER_PORT}`;
 
 let mainWindow = null;
 let backendProcess = null;
+let backendReadyPromise = null;
 let quitting = false;
 
 function resolveBackendDir() {
@@ -66,6 +67,8 @@ function waitForServerReady({ timeoutMs }) {
 }
 
 function startBackend() {
+  if (backendProcess) return;
+
   const backendDir = resolveBackendDir();
   const backendEntry = path.join(backendDir, "app.py");
   const dataDir = path.join(app.getPath("userData"), "upscaled-data");
@@ -84,6 +87,9 @@ function startBackend() {
   });
 
   child.on("exit", (code) => {
+    backendProcess = null;
+    backendReadyPromise = null;
+
     if (!quitting && code !== 0) {
       dialog.showErrorBox(
         "Upscaled backend stopped",
@@ -107,7 +113,20 @@ function stopBackend() {
   }
 }
 
+function ensureBackendReady() {
+  if (backendReadyPromise) return backendReadyPromise;
+  startBackend();
+  backendReadyPromise = waitForServerReady({ timeoutMs: 60_000 });
+  return backendReadyPromise;
+}
+
 async function createWindow() {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+    return;
+  }
+
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 760,
@@ -125,15 +144,17 @@ async function createWindow() {
     return { action: "deny" };
   });
 
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
+
   await mainWindow.loadURL(SERVER_URL);
   mainWindow.show();
 }
 
 async function boot() {
-  startBackend();
-
   try {
-    await waitForServerReady({ timeoutMs: 60_000 });
+    await ensureBackendReady();
   } catch (err) {
     dialog.showErrorBox(
       "Failed to start Upscaled",
@@ -151,13 +172,18 @@ if (!gotLock) {
   app.quit();
 } else {
   app.on("second-instance", () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
-    }
+    boot();
   });
 
-  app.on("ready", boot);
+  app.whenReady().then(() => {
+    boot();
+
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        boot();
+      }
+    });
+  });
 
   app.on("before-quit", () => {
     quitting = true;
@@ -167,12 +193,6 @@ if (!gotLock) {
   app.on("window-all-closed", () => {
     if (process.platform !== "darwin") {
       app.quit();
-    }
-  });
-
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      boot();
     }
   });
 }

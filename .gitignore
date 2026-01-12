@@ -182,3 +182,14 @@ cython_debug/
 
 uploads/
 outputs/
+node_modules/
+generator.pth
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+desktop.ini
+out/
+release/

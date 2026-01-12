@@ -13,8 +13,10 @@ from upscaler import load_image, save_image
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = "uploads"
-OUTPUT_FOLDER = "outputs"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.environ.get("UPSCALED_DATA_DIR") or BASE_DIR
+UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
+OUTPUT_FOLDER = os.path.join(DATA_DIR, "outputs")
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024
 
@@ -39,7 +41,8 @@ def load_model():
     try:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model = Generator(scale_factor=4).to(device)
-        model.load_state_dict(torch.load("generator.pth", map_location=device))
+        model_path = os.path.join(BASE_DIR, "generator.pth")
+        model.load_state_dict(torch.load(model_path, map_location=device))
         model.eval()
         model_loaded = True
         print(f"Model loaded successfully on {device}!")
@@ -673,4 +676,7 @@ def cleanup(task_id):
 if __name__ == "__main__":
     load_model()
 
-    app.run(debug = True, host = "0.0.0.0", port = 5000)
+    host = os.environ.get("UPSCALED_HOST", "127.0.0.1")
+    port = int(os.environ.get("UPSCALED_PORT", "5000"))
+    debug = os.environ.get("FLASK_DEBUG", "").strip() in {"1", "true", "True", "yes", "on"}
+    app.run(debug=debug, host=host, port=port)

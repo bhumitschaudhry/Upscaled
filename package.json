@@ -20,8 +20,10 @@
     },
     "files": [
       "electron/**",
+      "src/assets/**",
       "package.json"
     ],
+    "icon": "src/assets/upscaled.png",
     "extraResources": [
       {
         "from": "app.py",
@@ -42,4 +44,3 @@
     ]
   }
 }
-

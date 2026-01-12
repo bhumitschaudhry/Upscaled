@@ -1,3 +1,5 @@
+![Upscaled](src/assets/upscaled-text.png)
+
 # AI Image Upscaler
 
 An advanced image upscaling application that uses AI to enhance image resolution while maintaining quality. Built with Python, Flask, and PyTorch.

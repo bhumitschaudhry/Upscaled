@@ -127,10 +127,13 @@ async function createWindow() {
     return;
   }
 
+  const windowIconPath = path.resolve(__dirname, "..", "src", "assets", "upscaled.png");
+
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 760,
     show: false,
+    icon: windowIconPath,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
